@@ -1,4 +1,4 @@
-# piano-tiles
+# Piano-Tiles
 Game made using HTML, CSS, and JS.
 
 The game starts when you click the **`Start`** button.
@@ -9,4 +9,4 @@ To restart when the game ends, press **`Enter`** or **`Tab`** or **`Space`** or 
 
 You can also change the game's speed by choosing another difficulty.
 
-![default](https://user-images.githubusercontent.com/38983968/43968170-ed276e7a-9cf8-11e8-9834-be7166884b61.PNG)
+![default](https://raw.githubusercontent.com/marginal23326/Piano-Tiles/master/screenshot.png)
