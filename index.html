@@ -1,63 +1,56 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Piano-Tiles</title>
-<style>
-    #btn{
-        position: absolute;
-        top: 700;
-        left: 36%;
-        width: 300px;
-        height: 50px;
-    }
-    #start_btn {
-        position: relative;
-        top: 50%;
-        left: 50%;
-        margin-left: -50px;
-        margin-top: -50px;
-        display: block;
-        font-size: 1.3em;
-        width: 100px;
-        height: 100px;
-        font-weight: light;
-        font-family: 'Trebuchet MS', sans-serif;
-        text-align: center;
-        line-height: 100px;
-        letter-spacing: -1px;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        background: #5a99d4;
-        cursor: pointer;
-        box-shadow: 0 0 0 0 rgba(#5a99d4, .5);
-        transition: width 0.9s, height 0.9s ;
-    }
-    #start_btn:hover{
-        width: 105px;
-        height: 105px;
-    }
-    body {
-        background: #36D1DC;  /* fallback for old browsers */
-        background: -webkit-linear-gradient(to right, #5B86E5, #36D1DC);  /* Chrome 10-25, Safari 5.1-6 */
-        background: linear-gradient(to right, #5B86E5, #36D1DC); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-
-    }
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Tiles</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <canvas id="score_bar" width="300" height="70" style="position: absolute; left:36%;top: 0;"></canvas>
-    <canvas id="background" width="300" height="600" style="position: absolute; top:70; left: 36%;" ></canvas>
-    <canvas id="piano" width="300" height="600" style="position: absolute; top:70; left: 36%;"></canvas>
-    <audio  id="music" src="MUSIC.mp3" loop ></audio>
-
-    <div id="btn">
-        <span id="start_btn">START</span>
+    <div id="game-container">
+        <canvas id="score-bar" width="300" height="30"></canvas>
+        <canvas id="background" width="300" height="650"></canvas>
+        <canvas id="game-board" width="300" height="650"></canvas>
+        <div id="menu">
+            <button id="start-btn">Start</button>
+            <div id="difficulty">
+                <label for="difficulty-select">Difficulty:</label>
+                <select id="difficulty-select">
+                    <option value="beginner">Beginner</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="extreme">Extreme</option>
+                </select>
+            </div>
+            <div id="best-score">Best Score: <span id="best-score-value">0</span></div>
+            <div id="help-text">
+                <p><strong>Play:</strong></p>
+                <p>
+                    Use <strong>A</strong>, <strong>S</strong>, <strong>D</strong>, <strong>F</strong> keys 
+                    <span class="recommendation recommended">(Recommended)</span>
+                    <br> 
+                    or <strong>left-click</strong>
+                    <span class="recommendation not-recommended">(Not recommended)</span>
+                </p>
+                <p><strong>Restart:</strong></p>
+                <p>
+                    Press <strong>Enter</strong> or <strong>Tab</strong> or <strong>Space</strong> 
+                    <br> 
+                    or click <strong>"PLAY AGAIN"</strong>
+                </p>
+            </div>
+        </div>
+        <div id="game-over" class="hidden">
+            <h2>Game Over</h2>
+            <p>Score: <span id="final-score"></span></p>
+            <button id="restart-btn">Play Again</button>
+        </div>
     </div>
-    <script src="game.js"></script>
-<script>
- 
-
-</script>
+    <button id="mute-btn">🔊</button>
+    <script src="Tone.js"></script>
+    <script src="chroma.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
