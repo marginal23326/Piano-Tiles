@@ -9,9 +9,9 @@ to {
 }}
 
 @keyframes help-glow {
-    0% {box-shadow: 0 0 20px var(--primary-color),0 0 40px var(--secondary-color)}
+    0% {box-shadow: 0 0 10px var(--primary-color),0 0 40px var(--secondary-color);}
 
-    to {box-shadow: 0 0 40px var(--primary-color),0 0 60px var(--secondary-color)}
+    to {box-shadow: 0 0 20px var(--primary-color),0 0 60px var(--secondary-color);}
 }
 
 @keyframes pulse {
@@ -91,7 +91,7 @@ body {
 }
 
 #menu {
-    margin-top: 720px;
+    margin-top: 750px;
     text-align: center
 }
 
@@ -150,7 +150,7 @@ button:hover::before {
 }
 
 #difficulty-select {
-    padding: 8px 15px;
+    padding: 5px 25px 5px 10px;
     font-size: 1em;
     border-radius: 25px;
     border: 2px solid var(--secondary-color);
@@ -182,11 +182,9 @@ button:hover::before {
     background: rgba(0,0,51,.8);
     border: 2px solid var(--primary-color);
     border-radius: 15px;
-    padding: 20px;
-    margin-top: 20px;
-    box-shadow: 0 0 20px var(--primary-color),0 0 40px var(--secondary-color);
-    backdrop-filter: blur(5px);
-    animation: help-glow 3s infinite alternate
+    padding: 5px;
+    margin-top: 10px;
+    animation: help-glow 3s infinite alternate;
 }
 
 #help-text p {
