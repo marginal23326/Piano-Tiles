@@ -1,12 +1,12 @@
 # piano-tiles
-game made by HTML, JS.
+Game made using HTML, CSS, and JS.
 
-This game is using KEY "A" ,"S" ,"D" ,"F" to play.
+The game starts when you click the **`Start`** button.
 
-The game start when you click START button.
+To play, use the "**A**", "**S**", "**D**", "**F**" keys (**_Recommended_**) or left-click with mouse (_Not recommended_).
 
-The game can pause during game through click PAUSE button.
+To restart when the game ends, press **`Enter`** or **`Tab`** or **`Space`** or left-click "**`PLAY AGAIN`**" using mouse.
 
-The game is over when button change to "GG".
+You can also change the game's speed by choosing another difficulty.
 
 ![default](https://user-images.githubusercontent.com/38983968/43968170-ed276e7a-9cf8-11e8-9834-be7166884b61.PNG)
