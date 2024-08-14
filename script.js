@@ -1,111 +1,60 @@
-const COLUMN_COUNT = 4;
-const TILE_HEIGHT = 120;
+const COLUMN_COUNT = 4, TILE_HEIGHT = 120;
 const COLORS = ['#00ffff', '#ff00ff', '#ffff00', '#00ff00'];
 const melody = ['C4', 'E4', 'G4', 'C5', 'A4', 'F4', 'D4', 'B3', 'G4', 'B4', 'D5', 'G5', 'E5', 'C5', 'A4', 'F4'];
 const DIFFICULTY_SETTINGS = {
-    beginner: { speed: 2, name: 'Beginner' },
-    easy: { speed: 4, name: 'Easy' },
-    medium: { speed: 6, name: 'Medium' },
-    hard: { speed: 8, name: 'Hard' },
-    extreme: { speed: 16, name: 'Extreme' }
+    beginner: { speed: 2 }, easy: { speed: 4 }, medium: { speed: 6 },
+    hard: { speed: 8 }, extreme: { speed: 16 }
 };
 
 const elements = Object.fromEntries(['gameBoard', 'background', 'scoreBar', 'startBtn', 'restartBtn', 'difficulty', 'difficultySelect', 'helpText', 'gameOverScreen', 'finalScoreSpan', 'bestScoreSpan', 'muteBtn'].map(id => [id, document.getElementById(id)]));
-
-const ctx = elements.gameBoard.getContext('2d');
-const ctxBackground = elements.background.getContext('2d');
-const ctxScore = elements.scoreBar.getContext('2d');
-
-let tiles = [], score = 0, gameSpeed, gameLoop, animationFrameId;
-let isGameRunning = false, isGameOver = false, isMuted = false;
-let soundEffects, synth, melodyIndex = 0;
-
+const [ctx, ctxBackground, ctxScore] = [elements.gameBoard, elements.background, elements.scoreBar].map(el => el.getContext('2d'));
 const TILE_WIDTH = elements.gameBoard.width / COLUMN_COUNT;
+
+let tiles = [], score = 0, gameSpeed, gameLoop, animationFrameId, isGameRunning = isGameOver = isMuted = false, soundEffects, synth, melodyIndex = 0;
 
 const savedDifficulty = localStorage.getItem('difficulty') || 'easy';
 elements.difficultySelect.value = savedDifficulty;
 
-const bestScores = Object.fromEntries(
-    Object.keys(DIFFICULTY_SETTINGS).map(difficulty => 
-        [difficulty, localStorage.getItem(`highScore_${difficulty}`) || 0]
-    )
-);
+const bestScores = Object.fromEntries(Object.keys(DIFFICULTY_SETTINGS).map(d => [d, localStorage.getItem(`highScore_${d}`) || 0]));
 elements.bestScoreSpan.textContent = bestScores[savedDifficulty];
 
 function setupAudio() {
     if (synth) synth.dispose();
     if (soundEffects) Object.values(soundEffects).forEach(effect => effect.dispose());
     
-    synth = new Tone.Synth({
-        oscillator: { type: "triangle" },
-        envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.8 }
-    }).toDestination();
+    synth = new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.8 } }).toDestination();
     synth.volume.value = -6;
 
     soundEffects = {
-        gameOver: new Tone.Synth({
-            oscillator: { type: "square" },
-            envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.5 }
-        }).toDestination(),
-        newBestScore: new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "sine" },
-            envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.5 }
-        }).toDestination(),
+        gameOver: new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.5 } }).toDestination(),
+        newBestScore: new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.5 } }).toDestination(),
     };
 
     soundEffects.gameOver.volume.value = -10;
     soundEffects.newBestScore.volume.value = -8;
 }
 
-function playNote(note) {
-    if (Tone.context.state !== 'running') Tone.start();
-    if (!isMuted) synth.triggerAttackRelease(note, '8n');
-}
+const playNote = note => { if (Tone.context.state !== 'running') Tone.start(); if (!isMuted) synth.triggerAttackRelease(note, '8n'); };
 
 class Tile {
     constructor(column, order) {
-        this.x = column * TILE_WIDTH;
-        this.y = -TILE_HEIGHT;
-        this.width = TILE_WIDTH;
-        this.height = TILE_HEIGHT;
-        this.order = order;
-        this.column = column;
-        this.clicked = false;
-        this.clickAnimation = 0;
-        this.clickStartTime = 0;
-        this.hitZone = 10 * gameSpeed;
-        this.note = melody[order % melody.length];
+        Object.assign(this, { x: column * TILE_WIDTH, y: -TILE_HEIGHT, width: TILE_WIDTH, height: TILE_HEIGHT, order, column, clicked: false, clickAnimation: 0, clickStartTime: 0, hitZone: 10 * gameSpeed, note: melody[order % melody.length] });
     }
 
-    playSound() {
-        playNote(this.note);
-        melodyIndex = (melodyIndex + 1) % melody.length;
-    }
+    playSound() { playNote(this.note); melodyIndex = (melodyIndex + 1) % melody.length; }
 
     draw() {
-        let fillColor = this.clicked 
-            ? (t => (this.clickAnimation = t, `rgba(255, 255, 255, ${1 - t})`))
-                (Math.min((Date.now() - this.clickStartTime) / (1200 / gameSpeed), 1))
-            : chroma(COLORS[this.column]).darken(4.5).alpha(0.8).hex();
-        
-        const gradient = ctx.createRadialGradient(
-            this.x + this.width / 2, this.y + this.height / 2, 0,
-            this.x + this.width / 2, this.y + this.height / 2, this.width / 2
-        );
+        const fillColor = this.clicked ? `rgba(255, 255, 255, ${1 - (this.clickAnimation = Math.min((Date.now() - this.clickStartTime) / (1200 / gameSpeed), 1))})` : chroma(COLORS[this.column]).darken(4.5).alpha(0.8).hex();
+        const gradient = ctx.createRadialGradient(this.x + this.width / 2, this.y + this.height / 2, 0, this.x + this.width / 2, this.y + this.height / 2, this.width / 2);
         gradient.addColorStop(1, fillColor);
-        
         ctx.fillStyle = gradient;
         ctx.fillRect(this.x, this.y, this.width, this.height);
-        
         ctx.strokeStyle = COLORS[this.column];
         ctx.lineWidth = 2;
         ctx.strokeRect(this.x, this.y, this.width, this.height);
     }
 
-    isClicked(x, y) {
-        return x >= this.x && x < this.x + this.width &&
-               y >= this.y - this.hitZone && y < this.y + this.height + this.hitZone;
-    }
+    isClicked(x, y) { return x >= this.x && x < this.x + this.width && y >= this.y - this.hitZone && y < this.y + this.height + this.hitZone; }
 }
 
 function updateScore() {
@@ -122,41 +71,27 @@ function updateScore() {
 function generateTile(isInitial = false, i = 0) {
     const lastTile = tiles[tiles.length - 1];
     let column;
-    do {
-        column = Math.floor(Math.random() * COLUMN_COUNT);
-    } while (lastTile && lastTile.column === column);
-    
+    do { column = Math.floor(Math.random() * COLUMN_COUNT); } while (lastTile && lastTile.column === column);
     const tile = new Tile(column, lastTile ? lastTile.order + 1 : i);
-    
-    if (isInitial) {
-        tile.y = elements.gameBoard.height - TILE_HEIGHT * (i + 2);
-    } else {
-        tile.y = -TILE_HEIGHT;
-    }
-    
+    tile.y = isInitial ? elements.gameBoard.height - TILE_HEIGHT * (i + 2) : -TILE_HEIGHT;
     tiles.push(tile);
 }
 
 function drawBackground() {
     const { width, height } = elements.background;
-    const ctx = ctxBackground;
-    
-    ctx.fillStyle = ctx.createLinearGradient(0, 0, 0, height);
-    ['#000033', '#330033', '#003333'].forEach((c, i) => ctx.fillStyle.addColorStop(i/2, c));
-    ctx.fillRect(0, 0, width, height);
+    ctxBackground.fillStyle = ctxBackground.createLinearGradient(0, 0, 0, height);
+    ['#000033', '#330033', '#003333'].forEach((c, i) => ctxBackground.fillStyle.addColorStop(i/2, c));
+    ctxBackground.fillRect(0, 0, width, height);
     
     const drawLines = (spacing, style, lineWidth, verticalOnly = false) => {
-        ctx.strokeStyle = style;
-        ctx.lineWidth = lineWidth;
+        ctxBackground.strokeStyle = style;
+        ctxBackground.lineWidth = lineWidth;
         for (let i = spacing; i < (verticalOnly ? width : Math.max(width, height)); i += spacing) {
-            ctx.beginPath();
-            if (!verticalOnly) {
-                ctx.moveTo(0, i);
-                ctx.lineTo(width, i);
-            }
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, height);
-            ctx.stroke();
+            ctxBackground.beginPath();
+            if (!verticalOnly) { ctxBackground.moveTo(0, i); ctxBackground.lineTo(width, i); }
+            ctxBackground.moveTo(i, 0);
+            ctxBackground.lineTo(i, height);
+            ctxBackground.stroke();
         }
     };
 
@@ -167,21 +102,15 @@ function drawBackground() {
 function startGame() {
     window.scrollTo({top: 0, behavior: 'smooth'});
     if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-    
-    [score, tiles, isGameOver] = [0, [], false];
+    [score, tiles, isGameOver, isGameRunning] = [0, [], false, false];
     const difficulty = elements.difficultySelect.value;
     localStorage.setItem('difficulty', difficulty);
     gameSpeed = DIFFICULTY_SETTINGS[difficulty].speed;
-    
     ['startBtn', 'gameOverScreen', 'difficulty', 'helpText'].forEach(el => elements[el].classList.add('hidden'));
     cancelAnimationFrame(animationFrameId);
     setupAudio();
-    for (let i = 0; i < 5; i++) {
-        generateTile(true, i);
-    }
+    for (let i = 0; i < 5; i++) generateTile(true, i);
     melodyIndex = 0;
-    
-    isGameRunning = false;
     updateGame();
 }
 
@@ -189,10 +118,8 @@ function endGame() {
     isGameRunning = false;
     isGameOver = true;
     cancelAnimationFrame(animationFrameId);
-    
     const difficulty = elements.difficultySelect.value;
     const newBestScore = score > bestScores[difficulty];
-    
     if (newBestScore) {
         bestScores[difficulty] = score;
         localStorage.setItem(`highScore_${difficulty}`, bestScores[difficulty]);
@@ -202,14 +129,10 @@ function endGame() {
     } else {
         soundEffects.gameOver.triggerAttackRelease('C2', '0.5n');
     }
-    
     elements.finalScoreSpan.innerHTML = `<strong>${score}</strong>`;
     elements.gameOverScreen.classList.remove('hidden');
     setTimeout(startHelpIndicators, 30);
-    setTimeout(() => {
-        elements.difficulty.classList.remove('hidden');
-        elements.helpText.classList.remove('hidden');
-    }, 100);
+    setTimeout(() => ['difficulty', 'helpText'].forEach(el => elements[el].classList.remove('hidden')), 100);
 }
 
 function showNewBestScoreAlert() {
@@ -222,30 +145,20 @@ function showNewBestScoreAlert() {
 
 function updateGame() {
     if (isGameOver) return;
-
     ctx.clearRect(0, 0, elements.gameBoard.width, elements.gameBoard.height);
-    
     tiles = tiles.filter(tile => !tile.clicked || tile.clickAnimation < 1);
-    
     tiles.forEach((tile, index) => {
         if (isGameRunning) tile.y += gameSpeed;
         tile.draw();
-        
-        if (tile.y > elements.gameBoard.height && !tile.clicked) {
-            endGame();
-            return;
-        }
+        if (tile.y > elements.gameBoard.height && !tile.clicked) { endGame(); return; }
     });
-    
     if (tiles.length === 0 || tiles[tiles.length - 1].y > 0) generateTile();
     updateScore();
-    
     animationFrameId = requestAnimationFrame(updateGame);
 }
 
 function handleTileClick(clickedTile) {
     if (isGameOver) return;
-
     if (!isGameRunning) {
         if (clickedTile && clickedTile.order === 0) {
             isGameRunning = true;
@@ -257,12 +170,7 @@ function handleTileClick(clickedTile) {
         }
         return;
     }
-
-    if (!clickedTile || clickedTile.order !== score) {
-        endGame();
-        return;
-    }
-    
+    if (!clickedTile || clickedTile.order !== score) { endGame(); return; }
     clickedTile.clicked = true;
     clickedTile.clickStartTime = Date.now();
     clickedTile.playSound();
@@ -278,37 +186,27 @@ function handleDifficultyChange() {
 }
 
 function drawHelpIndicators() {
-    if (isGameRunning) {
-        cancelAnimationFrame(animationFrameId);
-        return;
-    }
-    
+    if (isGameRunning) { cancelAnimationFrame(animationFrameId); return; }
     const helpText = ['A', 'S', 'D', 'F'];
     const y = elements.gameBoard.height - TILE_WIDTH;
     const currentTime = Date.now() / 500;
-    
     ctx.save();
     ctx.clearRect(0, 0, elements.gameBoard.width, elements.gameBoard.height);
     tiles.forEach(tile => tile.draw());
-    
     ctx.font = 'bold 24px Orbitron, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
     helpText.forEach((text, i) => {
         const x = (i + 0.5) * TILE_WIDTH;
         const color = COLORS[i];
-        
         ctx.fillStyle = chroma(color).darken(4).alpha(0.6).hex();
         ctx.beginPath();
         ctx.arc(x, y, TILE_WIDTH / 3, 0, Math.PI * 2);
         ctx.fill();
-        
         ctx.fillStyle = ctx.strokeStyle = color;
         ctx.shadowColor = color;
         ctx.shadowBlur = 15;
         ctx.fillText(text, x, y);
-        
         ctx.globalAlpha = 0.5 + Math.sin(currentTime + i) * 0.5;
         ctx.strokeStyle = COLORS[i];
         ctx.lineWidth = 3;
@@ -328,27 +226,22 @@ function startHelpIndicators() {
     }
 }
 
-muteBtn.addEventListener('click', () => {
+elements.muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
     Tone.Master.mute = isMuted;
-    muteBtn.textContent = isMuted ? '🔇' : '🔊';
+    elements.muteBtn.textContent = isMuted ? '🔇' : '🔊';
 });
 
 elements.gameBoard.addEventListener('click', (e) => {
     const rect = elements.gameBoard.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-    
-    const clickedTile = tiles.slice().sort((a, b) => b.y - a.y)
-                             .find(tile => tile.isClicked(clickX, clickY) && !tile.clicked);
-    
+    const clickX = e.clientX - rect.left, clickY = e.clientY - rect.top;
+    const clickedTile = tiles.slice().sort((a, b) => b.y - a.y).find(tile => tile.isClicked(clickX, clickY) && !tile.clicked);
     handleTileClick(clickedTile);
 });
 
 document.addEventListener('keydown', (e) => {
     const columnMap = { 'a': 0, 's': 1, 'd': 2, 'f': 3 };
     const column = columnMap[e.key.toLowerCase()];
-    
     if (column !== undefined) {
         const clickedTile = tiles.find(tile => tile.x === column * TILE_WIDTH && tile.y + tile.height > 0 && !tile.clicked);
         handleTileClick(clickedTile);
