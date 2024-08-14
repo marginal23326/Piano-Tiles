@@ -10,7 +10,7 @@ const DIFFICULTY_SETTINGS = {
     extreme: { speed: 16, name: 'Extreme' }
 };
 
-const elements = Object.fromEntries(['gameBoard', 'background', 'scoreBar', 'startBtn', 'restartBtn', 'difficulty', 'difficultySelect', 'helpText', 'gameOverScreen', 'finalScoreSpan', 'bestScoreSpan'].map(id => [id, document.getElementById(id)]));
+const elements = Object.fromEntries(['gameBoard', 'background', 'scoreBar', 'startBtn', 'restartBtn', 'difficulty', 'difficultySelect', 'helpText', 'gameOverScreen', 'finalScoreSpan', 'bestScoreSpan', 'muteBtn'].map(id => [id, document.getElementById(id)]));
 
 const ctx = elements.gameBoard.getContext('2d');
 const ctxBackground = elements.background.getContext('2d');
@@ -327,8 +327,6 @@ function startHelpIndicators() {
         setTimeout(() => window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}), 180);
     }
 }
-
-const muteBtn = document.getElementById('mute-btn');
 
 muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
