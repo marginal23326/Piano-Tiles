@@ -10,35 +10,15 @@ const DIFFICULTY_SETTINGS = {
     extreme: { speed: 16, name: 'Extreme' }
 };
 
-const elements = {
-    gameBoard: document.getElementById('game-board'),
-    background: document.getElementById('background'),
-    scoreBar: document.getElementById('score-bar'),
-    startBtn: document.getElementById('start-btn'),
-    restartBtn: document.getElementById('restart-btn'),
-    difficulty: document.getElementById('difficulty'),
-    difficultySelect: document.getElementById('difficulty-select'),
-    helpText: document.getElementById('help-text'),
-    gameOverScreen: document.getElementById('game-over'),
-    finalScoreSpan: document.getElementById('final-score'),
-    bestScoreSpan: document.getElementById('best-score-value')
-};
+const elements = Object.fromEntries(['gameBoard', 'background', 'scoreBar', 'startBtn', 'restartBtn', 'difficulty', 'difficultySelect', 'helpText', 'gameOverScreen', 'finalScoreSpan', 'bestScoreSpan'].map(id => [id, document.getElementById(id)]));
 
 const ctx = elements.gameBoard.getContext('2d');
 const ctxBackground = elements.background.getContext('2d');
 const ctxScore = elements.scoreBar.getContext('2d');
 
-let tiles = [];
-let score = 0;
-let gameSpeed;
-let gameLoop;
-let animationFrameId;
-let countdownInProgress = false;
-let isGameRunning = false;
-let isMuted = false;
-let soundEffects;
-let synth;
-let melodyIndex = 0;
+let tiles = [], score = 0, gameSpeed, gameLoop, animationFrameId;
+let isGameRunning = false, isGameOver = false, isMuted = false;
+let soundEffects, synth, melodyIndex = 0;
 
 const TILE_WIDTH = elements.gameBoard.width / COLUMN_COUNT;
 
@@ -53,11 +33,13 @@ const bestScores = Object.fromEntries(
 elements.bestScoreSpan.textContent = bestScores[savedDifficulty];
 
 function setupAudio() {
+    if (synth) synth.dispose();
+    if (soundEffects) Object.values(soundEffects).forEach(effect => effect.dispose());
+    
     synth = new Tone.Synth({
         oscillator: { type: "triangle" },
         envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.8 }
     }).toDestination();
-
     synth.volume.value = -6;
 
     soundEffects = {
@@ -76,12 +58,8 @@ function setupAudio() {
 }
 
 function playNote(note) {
-    if (Tone.context.state !== 'running') {
-        Tone.start();
-    }
-    if (!isMuted) {
-        synth.triggerAttackRelease(note, '8n');
-    }
+    if (Tone.context.state !== 'running') Tone.start();
+    if (!isMuted) synth.triggerAttackRelease(note, '8n');
 }
 
 class Tile {
@@ -105,15 +83,10 @@ class Tile {
     }
 
     draw() {
-        let fillColor;
-        if (this.clicked) {
-            const t = Math.min((Date.now() - this.clickStartTime) / (1200 / gameSpeed), 1);
-            const opacity = 1 - 0.9 * t;
-            fillColor = `rgba(255, 255, 255, ${opacity})`;
-            this.clickAnimation = t;
-        } else {
-            fillColor = chroma(COLORS[this.column]).darken(4.5).alpha(0.8).hex();
-        }
+        let fillColor = this.clicked 
+            ? (t => (this.clickAnimation = t, `rgba(255, 255, 255, ${1 - t})`))
+                (Math.min((Date.now() - this.clickStartTime) / (1200 / gameSpeed), 1))
+            : chroma(COLORS[this.column]).darken(4.5).alpha(0.8).hex();
         
         const gradient = ctx.createRadialGradient(
             this.x + this.width / 2, this.y + this.height / 2, 0,
@@ -146,15 +119,22 @@ function updateScore() {
     ctxScore.shadowBlur = 0;
 }
 
-function generateTile() {
+function generateTile(isInitial = false, i = 0) {
     const lastTile = tiles[tiles.length - 1];
-    const lastOrder = lastTile ? lastTile.order : -1;
     let column;
     do {
         column = Math.floor(Math.random() * COLUMN_COUNT);
-    } while (lastTile && lastTile.x === column * TILE_WIDTH);
+    } while (lastTile && lastTile.column === column);
     
-    tiles.push(new Tile(column, lastOrder + 1));
+    const tile = new Tile(column, lastTile ? lastTile.order + 1 : i);
+    
+    if (isInitial) {
+        tile.y = elements.gameBoard.height - TILE_HEIGHT * (i + 2);
+    } else {
+        tile.y = -TILE_HEIGHT;
+    }
+    
+    tiles.push(tile);
 }
 
 function drawBackground() {
@@ -185,30 +165,30 @@ function drawBackground() {
 }
 
 function startGame() {
-    window.scrollTo({top: 0, behavior: 'smooth'})
-    if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-    }
-    score = 0;
-    tiles = [];
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
     
+    [score, tiles, isGameOver] = [0, [], false];
     const difficulty = elements.difficultySelect.value;
     localStorage.setItem('difficulty', difficulty);
     gameSpeed = DIFFICULTY_SETTINGS[difficulty].speed;
     
-    elements.startBtn.classList.add('hidden');
-    elements.gameOverScreen.classList.add('hidden');
-    elements.difficulty.classList.add('hidden');
-    elements.helpText.classList.add('hidden');
+    ['startBtn', 'gameOverScreen', 'difficulty', 'helpText'].forEach(el => elements[el].classList.add('hidden'));
     cancelAnimationFrame(animationFrameId);
     setupAudio();
-    showCountdown()
+    for (let i = 0; i < 5; i++) {
+        generateTile(true, i);
+    }
     melodyIndex = 0;
+    
+    isGameRunning = false;
+    updateGame();
 }
 
 function endGame() {
     isGameRunning = false;
-    clearInterval(gameLoop);
+    isGameOver = true;
+    cancelAnimationFrame(animationFrameId);
     
     const difficulty = elements.difficultySelect.value;
     const newBestScore = score > bestScores[difficulty];
@@ -237,48 +217,57 @@ function showNewBestScoreAlert() {
     alertElement.textContent = 'New Best Score!';
     alertElement.classList.add('new-best-score-alert');
     document.body.appendChild(alertElement);
-
-    setTimeout(() => {
-        document.body.removeChild(alertElement);
-    }, 3000);
+    setTimeout(() => document.body.removeChild(alertElement), 3000);
 }
 
 function updateGame() {
+    if (isGameOver) return;
+
     ctx.clearRect(0, 0, elements.gameBoard.width, elements.gameBoard.height);
     
     tiles = tiles.filter(tile => !tile.clicked || tile.clickAnimation < 1);
     
     tiles.forEach((tile, index) => {
-        tile.y += gameSpeed;
+        if (isGameRunning) tile.y += gameSpeed;
         tile.draw();
         
         if (tile.y > elements.gameBoard.height && !tile.clicked) {
-            Tone.Transport.clear();
             endGame();
+            return;
         }
     });
     
-    if (tiles.length === 0 || tiles[tiles.length - 1].y > 0) {
-        generateTile();
-    }
+    if (tiles.length === 0 || tiles[tiles.length - 1].y > 0) generateTile();
     updateScore();
+    
+    animationFrameId = requestAnimationFrame(updateGame);
 }
 
 function handleTileClick(clickedTile) {
-    if (!clickedTile) {
+    if (isGameOver) return;
+
+    if (!isGameRunning) {
+        if (clickedTile && clickedTile.order === 0) {
+            isGameRunning = true;
+            clickedTile.clicked = true;
+            clickedTile.clickStartTime = Date.now();
+            clickedTile.playSound();
+            score++;
+            gameSpeed += 0.05;
+        }
+        return;
+    }
+
+    if (!clickedTile || clickedTile.order !== score) {
         endGame();
         return;
     }
     
-    if (clickedTile.order === score && !clickedTile.clicked) {
-        clickedTile.clicked = true;
-        clickedTile.clickStartTime = Date.now();
-        clickedTile.playSound();
-        score++;
-        gameSpeed += 0.05;
-    } else if (!clickedTile.clicked) {
-        endGame();
-    }
+    clickedTile.clicked = true;
+    clickedTile.clickStartTime = Date.now();
+    clickedTile.playSound();
+    score++;
+    gameSpeed += 0.05;
 }
 
 function handleDifficultyChange() {
@@ -339,29 +328,6 @@ function startHelpIndicators() {
     }
 }
 
-function showCountdown() {
-    if (countdownInProgress) return;
-    countdownInProgress = true;
-    let count = 3;
-    const countdownElement = document.createElement('div');
-    countdownElement.classList.add('countdown');
-    document.body.appendChild(countdownElement);
-    ctx.clearRect(0, 0, elements.gameBoard.width, elements.gameBoard.height);
-    const countdownInterval = setInterval(() => {
-        if (count > 0) {
-            countdownElement.textContent = count;
-            playNote(`C${count+3}`);
-            count--;
-        } else {
-            clearInterval(countdownInterval);
-            document.body.removeChild(countdownElement);
-            isGameRunning = true;
-            gameLoop = setInterval(updateGame, 1000 / 60);
-            countdownInProgress = false;
-        }
-    }, 350);
-}
-
 const muteBtn = document.getElementById('mute-btn');
 
 muteBtn.addEventListener('click', () => {
@@ -371,34 +337,26 @@ muteBtn.addEventListener('click', () => {
 });
 
 elements.gameBoard.addEventListener('click', (e) => {
-    if (!isGameRunning) return;
-    
     const rect = elements.gameBoard.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
     
-    const sortedTiles = tiles.slice().sort((a, b) => b.y - a.y);
-    
-    const clickedTile = sortedTiles.find(tile => tile.isClicked(clickX, clickY) && !tile.clicked);
+    const clickedTile = tiles.slice().sort((a, b) => b.y - a.y)
+                             .find(tile => tile.isClicked(clickX, clickY) && !tile.clicked);
     
     handleTileClick(clickedTile);
 });
 
 document.addEventListener('keydown', (e) => {
-    if (!isGameRunning) {
-        if (e.key === 'Enter' || e.key === 'Tab' || e.key === ' ') {
-            e.preventDefault();
-            startGame();
-        }
-        return;
-    }
-
     const columnMap = { 'a': 0, 's': 1, 'd': 2, 'f': 3 };
     const column = columnMap[e.key.toLowerCase()];
     
     if (column !== undefined) {
         const clickedTile = tiles.find(tile => tile.x === column * TILE_WIDTH && tile.y + tile.height > 0 && !tile.clicked);
         handleTileClick(clickedTile);
+    } else if (['Enter', 'Tab', ' '].includes(e.key)) {
+        e.preventDefault();
+        if (!isGameRunning) startGame();
     }
 });
 

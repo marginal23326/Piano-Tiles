@@ -9,14 +9,14 @@
 </head>
 <body>
     <div id="game-container">
-        <canvas id="score-bar" width="300" height="30"></canvas>
-        <canvas id="background" width="300" height="650"></canvas>
-        <canvas id="game-board" width="300" height="650"></canvas>
+        <canvas id="scoreBar" width="300" height="30"></canvas>
+        <canvas id="background" width="300" height="720"></canvas>
+        <canvas id="gameBoard" width="300" height="720"></canvas>
         <div id="menu">
-            <button id="start-btn">Start</button>
+            <button id="startBtn">Start</button>
             <div id="difficulty">
-                <label for="difficulty-select">Difficulty:</label>
-                <select id="difficulty-select">
+                <label for="difficultySelect">Difficulty:</label>
+                <select id="difficultySelect">
                     <option value="beginner">Beginner</option>
                     <option value="easy">Easy</option>
                     <option value="medium">Medium</option>
@@ -24,8 +24,8 @@
                     <option value="extreme">Extreme</option>
                 </select>
             </div>
-            <div id="best-score">Best Score: <span id="best-score-value">0</span></div>
-            <div id="help-text">
+            <div id="best-score">Best Score: <span id="bestScoreSpan">0</span></div>
+            <div id="helpText">
                 <p><strong>Play:</strong></p>
                 <p>
                     Use <strong>A</strong>, <strong>S</strong>, <strong>D</strong>, <strong>F</strong> keys 
@@ -42,10 +42,10 @@
                 </p>
             </div>
         </div>
-        <div id="game-over" class="hidden">
+        <div id="gameOverScreen" class="hidden">
             <h2>Game Over</h2>
-            <p>Score: <span id="final-score"></span></p>
-            <button id="restart-btn">Play Again</button>
+            <p>Score: <span id="finalScoreSpan"></span></p>
+            <button id="restartBtn">Play Again</button>
         </div>
     </div>
     <button id="mute-btn">🔊</button>
