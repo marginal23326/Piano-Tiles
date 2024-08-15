@@ -1,6 +1,15 @@
 const COLUMN_COUNT = 4, TILE_HEIGHT = 120;
 const COLORS = ['#00ffff', '#ff00ff', '#ffff00', '#00ff00'];
-const melody = ['C4', 'E4', 'G4', 'C5', 'A4', 'F4', 'D4', 'B3', 'G4', 'B4', 'D5', 'G5', 'E5', 'C5', 'A4', 'F4'];
+const melody = [
+    'C4', 'E4', 'G4', 'C5', 'E5', 'G5', 'E5', 'C5', 'F4', 'A4', 'C5', 'F5', 'A5', 'F5', 'C5', 'A4', 'G4', 'B4', 'D5', 'G5', 'B5', 'G5', 'D5', 'B4', 'C5', 'E5', 'G5', 'C6', 'G5', 'E5', 'C5', 'G4',
+    'E4', 'E4', 'F4', 'G4', 'G4', 'F4', 'E4', 'D4', 'C4', 'C4', 'D4', 'E4', 'E4', 'D4', 'D4', 'E4', 'E4', 'F4', 'G4', 'G4', 'F4', 'E4', 'D4', 'C4', 'C4', 'D4', 'E4', 'D4', 'C4', 'C4',
+    'C5', 'G4', 'E4', 'C4', 'G4', 'C5', 'E5', 'G5', 'A5', 'F5', 'C5', 'A4', 'F4', 'A4', 'C5', 'F5', 'E5', 'D#5', 'E5', 'D#5', 'E5', 'B4', 'D5', 'C5', 'A4', 'C4', 'E4', 'A4', 'B4', 'E4', 'G#4', 'B4', 'C5',
+    'E5', 'D#5', 'E5', 'D#5', 'E5', 'B4', 'D5', 'C5', 'A4', 'C4', 'E4', 'A4', 'B4', 'E4', 'C5', 'B4', 'A4', 'B4', 'C5', 'D5', 'E5', 'G4', 'F5', 'E5', 'D5', 'F4', 'E5', 'D5', 'C5', 'E4', 'D5', 'C5', 'B4',
+    'A4', 'B4', 'C5', 'D5', 'E5', 'G5', 'F5', 'E5', 'A4', 'C5', 'B4', 'A4', 'G#4', 'B4', 'A4', 'E4', 'E5', 'D#5', 'E5', 'D#5', 'E5', 'B4', 'D5', 'C5', 'A4', 'C4', 'E4', 'A4', 'B4', 'E4', 'G#4', 'B4', 'C5',
+    'C5', 'G4', 'E4', 'C4', 'F4', 'A4', 'C5', 'F5', 'D5', 'A4', 'F4', 'D4', 'G4', 'B4', 'D5', 'G5', 'G4', 'D5', 'G5', 'D5', 'G5', 'B4', 'D5', 'G5', 'A4', 'D5', 'F#5', 'G4', 'D5', 'G5', 'D5', 'G5', 'B5', 'D5', 'G5', 'D5', 'C5', 'B4', 'A4',
+    'B4', 'D5', 'G5', 'D5', 'G5', 'B4', 'D5', 'G5', 'A4', 'C5', 'F#5', 'G4', 'B4', 'D5', 'G5', 'B5', 'G5', 'D5', 'B4', 'G4', 'D4', 'G4', 'A4', 'C5', 'E5', 'A5', 'C6', 'A5', 'E5', 'C5', 'G#4', 'B4', 'E5', 'G#5', 'B5', 'G#5', 'E5', 'B4', 'B4', 'D5', 'F5', 'G#5', 'B5', 'F5', 'G#5', 'B5', 'C6', 'A5', 'F5', 'D5', 'B4', 'G#4', 'E4', 'D4', 'E4', 'G#4', 'B4', 'E5', 'G#5', 'B5', 'G#5', 'E5',
+    'A5', 'F5', 'D5', 'B4', 'G#4', 'E4', 'B3', 'E4', 'C5', 'G4', 'E4', 'C4', 'F4', 'A4', 'C5', 'F5', 'G4', 'B4', 'D5', 'G5', 'C5', 'E5', 'G5', 'C6', 'A4', 'C5', 'E5', 'A5', 'D5', 'F5', 'A5', 'D6', 'G4', 'B4', 'D5', 'G5', 'C5', 'E5', 'G5', 'C6'
+];
 const DIFFICULTY_SETTINGS = {
     beginner: { speed: 2 }, easy: { speed: 4 }, medium: { speed: 6 },
     hard: { speed: 8 }, extreme: { speed: 16 }
@@ -21,20 +30,24 @@ elements.bestScoreSpan.textContent = bestScores[savedDifficulty];
 function setupAudio() {
     if (synth) synth.dispose();
     if (soundEffects) Object.values(soundEffects).forEach(effect => effect.dispose());
-    
-    synth = new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.8 } }).toDestination();
-    synth.volume.value = -6;
+
+    synth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.8 }}).toDestination();
+    synth.volume.value = -10;
 
     soundEffects = {
-        gameOver: new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.5 } }).toDestination(),
-        newBestScore: new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.5 } }).toDestination(),
+        gameOver: new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.5 }}).toDestination(),
+        newBestScore: new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.5 }}).toDestination(),
     };
 
     soundEffects.gameOver.volume.value = -10;
     soundEffects.newBestScore.volume.value = -8;
 }
 
-const playNote = note => { if (Tone.context.state !== 'running') Tone.start(); if (!isMuted) synth.triggerAttackRelease(note, '8n'); };
+const playNote = note => {
+    if (Tone.context.state !== 'running') Tone.start();
+    if (!isMuted) synth.triggerAttackRelease(note, '8n');
+    melodyIndex = (melodyIndex + 1) % melody.length;
+};
 
 class Tile {
     constructor(column, order) {
@@ -124,10 +137,10 @@ function endGame() {
         bestScores[difficulty] = score;
         localStorage.setItem(`highScore_${difficulty}`, bestScores[difficulty]);
         elements.bestScoreSpan.textContent = bestScores[difficulty];
-        soundEffects.newBestScore.triggerAttackRelease(['C5', 'E5', 'G5'], '8n');
+        soundEffects.newBestScore.triggerAttackRelease(['C5', 'E5', 'G5', 'C6'], '4n');
         showNewBestScoreAlert();
     } else {
-        soundEffects.gameOver.triggerAttackRelease('C2', '0.5n');
+        soundEffects.gameOver.triggerAttackRelease('C3', '4n');
     }
     elements.finalScoreSpan.innerHTML = `<strong>${score}</strong>`;
     elements.gameOverScreen.classList.remove('hidden');
