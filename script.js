@@ -1,15 +1,5 @@
 const COLUMN_COUNT = 4, TILE_HEIGHT = 120;
 const COLORS = ['#00ffff', '#ff00ff', '#ffff00', '#00ff00'];
-const melody = [
-    'C4', 'E4', 'G4', 'C5', 'E5', 'G5', 'E5', 'C5', 'F4', 'A4', 'C5', 'F5', 'A5', 'F5', 'C5', 'A4', 'G4', 'B4', 'D5', 'G5', 'B5', 'G5', 'D5', 'B4', 'C5', 'E5', 'G5', 'C6', 'G5', 'E5', 'C5', 'G4',
-    'E4', 'E4', 'F4', 'G4', 'G4', 'F4', 'E4', 'D4', 'C4', 'C4', 'D4', 'E4', 'E4', 'D4', 'D4', 'E4', 'E4', 'F4', 'G4', 'G4', 'F4', 'E4', 'D4', 'C4', 'C4', 'D4', 'E4', 'D4', 'C4', 'C4',
-    'C5', 'G4', 'E4', 'C4', 'G4', 'C5', 'E5', 'G5', 'A5', 'F5', 'C5', 'A4', 'F4', 'A4', 'C5', 'F5', 'E5', 'D#5', 'E5', 'D#5', 'E5', 'B4', 'D5', 'C5', 'A4', 'C4', 'E4', 'A4', 'B4', 'E4', 'G#4', 'B4', 'C5',
-    'E5', 'D#5', 'E5', 'D#5', 'E5', 'B4', 'D5', 'C5', 'A4', 'C4', 'E4', 'A4', 'B4', 'E4', 'C5', 'B4', 'A4', 'B4', 'C5', 'D5', 'E5', 'G4', 'F5', 'E5', 'D5', 'F4', 'E5', 'D5', 'C5', 'E4', 'D5', 'C5', 'B4',
-    'A4', 'B4', 'C5', 'D5', 'E5', 'G5', 'F5', 'E5', 'A4', 'C5', 'B4', 'A4', 'G#4', 'B4', 'A4', 'E4', 'E5', 'D#5', 'E5', 'D#5', 'E5', 'B4', 'D5', 'C5', 'A4', 'C4', 'E4', 'A4', 'B4', 'E4', 'G#4', 'B4', 'C5',
-    'C5', 'G4', 'E4', 'C4', 'F4', 'A4', 'C5', 'F5', 'D5', 'A4', 'F4', 'D4', 'G4', 'B4', 'D5', 'G5', 'G4', 'D5', 'G5', 'D5', 'G5', 'B4', 'D5', 'G5', 'A4', 'D5', 'F#5', 'G4', 'D5', 'G5', 'D5', 'G5', 'B5', 'D5', 'G5', 'D5', 'C5', 'B4', 'A4',
-    'B4', 'D5', 'G5', 'D5', 'G5', 'B4', 'D5', 'G5', 'A4', 'C5', 'F#5', 'G4', 'B4', 'D5', 'G5', 'B5', 'G5', 'D5', 'B4', 'G4', 'D4', 'G4', 'A4', 'C5', 'E5', 'A5', 'C6', 'A5', 'E5', 'C5', 'G#4', 'B4', 'E5', 'G#5', 'B5', 'G#5', 'E5', 'B4', 'B4', 'D5', 'F5', 'G#5', 'B5', 'F5', 'G#5', 'B5', 'C6', 'A5', 'F5', 'D5', 'B4', 'G#4', 'E4', 'D4', 'E4', 'G#4', 'B4', 'E5', 'G#5', 'B5', 'G#5', 'E5',
-    'A5', 'F5', 'D5', 'B4', 'G#4', 'E4', 'B3', 'E4', 'C5', 'G4', 'E4', 'C4', 'F4', 'A4', 'C5', 'F5', 'G4', 'B4', 'D5', 'G5', 'C5', 'E5', 'G5', 'C6', 'A4', 'C5', 'E5', 'A5', 'D5', 'F5', 'A5', 'D6', 'G4', 'B4', 'D5', 'G5', 'C5', 'E5', 'G5', 'C6'
-];
 const DIFFICULTY_SETTINGS = {
     beginner: { speed: 2 }, easy: { speed: 4 }, medium: { speed: 6 },
     hard: { speed: 8 }, extreme: { speed: 16 }
@@ -19,7 +9,7 @@ const elements = Object.fromEntries(['gameBoard', 'background', 'scoreBar', 'sta
 const [ctx, ctxBackground, ctxScore] = [elements.gameBoard, elements.background, elements.scoreBar].map(el => el.getContext('2d'));
 const TILE_WIDTH = elements.gameBoard.width / COLUMN_COUNT;
 
-let tiles = [], score = 0, gameSpeed, gameLoop, animationFrameId, isGameRunning = isGameOver = isMuted = false, soundEffects, synth, melodyIndex = 0;
+let tiles = [], melodyIndex = score = 0, gameSpeed, gameLoop, animationFrameId, isGameRunning = isGameOver = isMuted = false, soundEffects, synth;
 
 const savedDifficulty = localStorage.getItem('difficulty') || 'easy';
 elements.difficultySelect.value = savedDifficulty;
