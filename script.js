@@ -47,14 +47,23 @@ class Tile {
     playSound() { playNote(this.note); melodyIndex = (melodyIndex + 1) % melody.length; }
 
     draw() {
-        const fillColor = this.clicked ? `rgba(255, 255, 255, ${1 - (this.clickAnimation = Math.min((Date.now() - this.clickStartTime) / (1200 / gameSpeed), 1))})` : chroma(COLORS[this.column]).darken(4.5).alpha(0.8).hex();
-        const gradient = ctx.createRadialGradient(this.x + this.width / 2, this.y + this.height / 2, 0, this.x + this.width / 2, this.y + this.height / 2, this.width / 2);
-        gradient.addColorStop(1, fillColor);
-        ctx.fillStyle = gradient;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = COLORS[this.column];
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, this.width / 2);
+        gradient.addColorStop(0, COLORS[this.column]);
+        gradient.addColorStop(1, chroma(COLORS[this.column]).darken(2).hex());
+        
+        ctx.fillStyle = this.clicked 
+            ? `rgba(255, 255, 255, ${1 - (this.clickAnimation = Math.min((Date.now() - this.clickStartTime) / (1200 / gameSpeed), 1))})`
+            : gradient;
+        
+        ctx.beginPath();
+        ctx.roundRect(this.x, this.y, this.width, this.height, 10);
+        ctx.fill();
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.lineWidth = 2;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.stroke();
     }
 
     isClicked(x, y) { return x >= this.x && x < this.x + this.width && y >= this.y - this.hitZone && y < this.y + this.height + this.hitZone; }
@@ -82,24 +91,24 @@ function generateTile(isInitial = false, i = 0) {
 
 function drawBackground() {
     const { width, height } = elements.background;
-    ctxBackground.fillStyle = ctxBackground.createLinearGradient(0, 0, 0, height);
-    ['#000033', '#330033', '#003333'].forEach((c, i) => ctxBackground.fillStyle.addColorStop(i/2, c));
+    const gradient = ctxBackground.createLinearGradient(0, 0, width, height);
+    [['#1a1a2e', 0], ['#16213e', 0.5], ['#0f3460', 1]].forEach(([color, stop]) => gradient.addColorStop(stop, color));
+    ctxBackground.fillStyle = gradient;
     ctxBackground.fillRect(0, 0, width, height);
     
-    const drawLines = (spacing, style, lineWidth, verticalOnly = false) => {
-        ctxBackground.strokeStyle = style;
-        ctxBackground.lineWidth = lineWidth;
-        for (let i = spacing; i < (verticalOnly ? width : Math.max(width, height)); i += spacing) {
-            ctxBackground.beginPath();
-            if (!verticalOnly) { ctxBackground.moveTo(0, i); ctxBackground.lineTo(width, i); }
-            ctxBackground.moveTo(i, 0);
-            ctxBackground.lineTo(i, height);
-            ctxBackground.stroke();
-        }
-    };
+    for (let i = 0; i < 100; i++) {
+        ctxBackground.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.5})`;
+        ctxBackground.beginPath();
+        ctxBackground.arc(Math.random() * width, Math.random() * height, Math.random() * 2, 0, Math.PI * 2);
+        ctxBackground.fill();
+    }
 
-    drawLines(20, 'rgba(0, 255, 255, 0.2)', 1);
-    drawLines(TILE_WIDTH, 'rgba(0, 255, 255, 0.5)', 2, true);
+    ctxBackground.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+    ctxBackground.lineWidth = 2;
+    for (let i = TILE_WIDTH; i < width; i += TILE_WIDTH) {
+        ctxBackground.stroke(new Path2D(`M${i} 0 V${height}`));
+    }
+
 }
 
 function startGame() {

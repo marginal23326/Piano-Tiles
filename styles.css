@@ -60,10 +60,6 @@ body {
     background: rgba(0,0,51,.8);
     border-radius: 20px;
     padding: 20px;
-    box-shadow: 0 0 30px var(--primary-color),0 0 60px var(--secondary-color),0 0 90px var(--tertiary-color);
-    backdrop-filter: blur(10px);
-    transform-style: preserve-3d;
-    perspective: 1000px;
     animation: container-glow 4s infinite alternate
 }
 
@@ -271,7 +267,7 @@ button:hover::before {
     top: 50%;
     left: 50%;
     transform: translate(-50%,-50%);
-    background-color: rgba(255,215,0,.8);
+    background-color: rgba(76, 175, 80,.8);
     color: #000;
     padding: 20px;
     border-radius: 10px;
