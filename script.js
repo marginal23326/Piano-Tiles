@@ -108,7 +108,6 @@ function drawBackground() {
     for (let i = TILE_WIDTH; i < width; i += TILE_WIDTH) {
         ctxBackground.stroke(new Path2D(`M${i} 0 V${height}`));
     }
-
 }
 
 function startGame() {
@@ -169,25 +168,12 @@ function updateGame() {
     animationFrameId = requestAnimationFrame(updateGame);
 }
 
-function handleTileClick(clickedTile) {
-    if (isGameOver) return;
-    if (!isGameRunning) {
-        if (clickedTile && clickedTile.order === 0) {
-            isGameRunning = true;
-            clickedTile.clicked = true;
-            clickedTile.clickStartTime = Date.now();
-            clickedTile.playSound();
-            score++;
-            gameSpeed += 0.05;
-        }
-        return;
-    }
-    if (!clickedTile || clickedTile.order !== score) { endGame(); return; }
-    clickedTile.clicked = true;
-    clickedTile.clickStartTime = Date.now();
-    clickedTile.playSound();
-    score++;
-    gameSpeed += 0.05;
+function handleTileClick(tile) {
+    if (isGameOver || !tile || tile.order !== score) return isGameRunning && endGame();
+    isGameRunning = tile.clicked = true;
+    tile.clickStartTime = Date.now();
+    tile.playSound();
+    score++, gameSpeed += 0.05;
 }
 
 function handleDifficultyChange() {
